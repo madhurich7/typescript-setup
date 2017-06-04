@@ -1,0 +1,410 @@
+> to install typescript,
+    npm install -g typescript
+> to check whether its installed or not
+    tsc -v    
+> to compile a '.ts' file to '.js' file
+    tsc fileName.ts
+    will create a fileName.js file.
+> to have different output fileName
+    tsc --out outputFile.js inputFile.ts
+> to watch the files 
+    tsc --watch --out outputFile.js inputFile.ts
+        this will create a outputFile.js file, if it's not present and watches for changes in inputFile.ts
+        if outputFile.js is present, it will watch for changes in inputFile.ts
+                or
+    tsc -w --out outputFile.js inputFile.ts            
+    this will create the outputFile.js file and wathes any changes 
+    in inputFile.ts file and updates them in outputFile.js file.
+> to look into different options 
+    tsc --help    
+---------------
+CONFIGURING Typescript
+> to create a configuration file, run
+    tsc --init
+        this will create a tsconfig.json file with default options
+and it says exclude node_modules, it means it includes remaining all files.
+So when you run just
+    tsc        
+        it will find the '.ts' files and creates a '.js' file accordingly.
+------------------
+COMPILE ONLY SPECIFIC FILES
+when you wanted to compile specific files when you run 'tsc', you can do that using 
+"files" : [], option and mention which files you need to compile in the array.
+"files" : ['fileName.ts']
+when you want to put those compiled '.js' files to some other directory say 
+'dist' folder, you can do that using
+"outDir": "./dist" inside compilerOptions.
+    "compilerOptions" :{
+        "outDir": "./dist"
+    } 
+If more than one '.ts' file need to be compiled then, in your main file either(app.ts or main.ts)
+import other '.ts' files at the top
+    import './otherFile' --> in your main file
+-------------------
+STOP COMPILING FILES IF THERE'S ERROR
+when you want to stop compiling on error in '.ts' this can be done with
+"noEmitOnError" : true in compilerOptions
+it means the '.ts' file will not be compiled and it throws error.
+    if "noEmitOnError" : false
+    then it will throw error and also it compiles '.ts' file by creating a corresponding '.js' file 
+------------
+BUNDLING AND CONFIGURING USING SystemJS
+
+with the files generated using 'tsc' the '.js'. If you have a 'require' statement, they wont be loaded
+on browser since they are just based on 'commonJS' configuration and we need to tell the browser to laod them. 
+We can do this by configuring with SystemJS.
+
+To include systemJs script tag
+go to 
+npmcdn.com/systemjs/dist, will lead to below link
+https://unpkg.com/systemjs@0.20.13/dist/
+
+then to configure
+    System.config({
+        packages: {
+            "dist": {
+                "defaultExtension": "js",//you want to make the default extension tobe as js.
+                "main": "app" //this is the main file name, here we have "app.ts"
+                                //as the main filename, the key should be "main" it self 
+                                //and the value should be the filename (what ever you name it)
+            }
+        }
+    })
+
+    System.import("dist"); //when this statement is seen, it actullay
+    looks into the configuration of "dist" above
+This will look into the files inside of "dist" folder and loads them in the browser
+> To see whether its loaded or not, 
+install, npm install -g http-server (you already did that long back on your machine)
+to run the server 
+    http-server -c-1 
+        //what this command does is it will not cache the files each time the server is ran,
+        //it will load completely new file and will not give any cached results.
+> After making any changes to app.ts ot two.js, whatever the '.ts' files are present
+to see those changes, first convert those changed '.ts' file to '.js' by running
+    tsc 
+then to observe those changes
+    run, http-server -c-1
+    go to localhost://8080 orcopy the link it has given you.
+    you can see in the Network tab of Dev Tools, that 'system.js' is loaded
+    along with the compiled 'js' files
+-------
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "outDir": "./dist",
+        "noEmitOnError": true
+    },
+    "files": [
+        "src/app.ts"
+    ]
+} 
+
+When ever we wanted to compile specific files we can do that within "files" key in the tsconfig.json
+file, but if we wnated to compile other files, that also must be included like
+    "files": [
+        "src/app.ts",
+        "src/otherFile.ts"
+    ]           
+In typescript 1 this is the drawback, but in typescript 2 we can specify
+all files using patterns like
+    "files": [
+        "src/*.ts"
+    ]  
+So inorder to avoid such type of declaration within "files" array (each and every file in 'src')
+we can specify 'rootDir' : './src' in compilerOptions
+and 'exclude' : ['node_modules']
+
+--> in version 1
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "rootDir": "./src", //this wil compile all the files in 'src' folder
+        "target": "es5",
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "outDir": "./dist",
+        "noEmitOnError": true
+    },
+    "exclude" : ["node_modules"]
+} 
+
+but in version 2, we can specify patterns
+     "files": [
+        "src/*.ts"
+    ]  
+----------------
+typescript will not give code corresponding to interfaces though it creates
+a '.js' file for '.ts'. It just jas a statement called 'use strict' and some object.defineProperty
+-----------
+When you wnated to use in some library like 'lodash' and also bring in the typings
+of that library, then you need to do the following
+first install typings on your machine globally
+    npm install -g typings
+    typings install --save lodash
+
+
+import * as _ from 'lodash';
+
+Previously to make require('tsFileName'); work we configured, system js now we have
+one more require statement that requires 'lodash' to make that work we 'map' it in the configuration
+****************IMPORTANT***************
+put this 'map' property after 'packages'
+
+    System.config({
+        packages: {
+            "dist" : {
+                "defaultExtension": "js",
+                "main": "app"
+            }
+        },
+        map: {
+             "lodash": "https://npmcdn.com/lodash@4.17.4"
+            }
+    })
+> to check if an object is an array or not 
+    Array.isArray(yourObjectNameHere); //should log true if 'yourObjectNameHere' is an array
+    since in javacript we dont have a datatype explicity as 'array'
+    var obj1 = [1, 2, 3, 4];
+    I mean when you log console.log(typeof(obj1));  //this logs object
+    so to chekc ig 'obj1' is an array or not (whether an object is an array or not)
+    console.log(Array.isArray(obj1)); //this logs true  
+------------------------******----------------
+ Update available 2.1.0 → 2.1.1    │
+   │   Run npm i -g typings to update    
+------------------------******----------------   
+
+YOU GOT AN ERROR SAYING lodash is not found initially
+so you changed the tsconfig.json file
+you included
+    "rootDir": "./src" //to look into all fiels in 'src' folder in "compilerOptions"
+    and "exclude": ["node_modules"] after "compilerOptions"
+
+-------------
+typings and node_modules
+
+npm install --save rxjs
+
+import 'rxjs'; --> in  app.ta file
+this will throw error when you run
+    tsc
+
+    ERROR is
+         error TS2693: 'Promise' only refers to a type, but is being used as a value here.
+node_modules/rxjs/operator/toPromise.d.ts(3,79): error TS2693: 'Promise' only refers to a type, but is being used as a value here.
+
+because rxjs uses new features of es6, but in 'tsconfig.json' we have 
+target as 'es5' to make this 'rxjs' work change the target to 'es5'.
+now run 'tsc' it will not throw error.
+
+Now if we wanted to make this 'rxjs' even though the target is 'es5' we need to install the
+typings.
+    typings install --save es6-shim --ambient
+        ambient means it will download the 'es6-shim' from all possible resources availabel, if 
+        its not found in its respective resource.
+YOU GOT AN ERROR WHEN YOU RAN ABOVE COMMAND
+    IT Says 'ambient' is deprecated use 'global' instead
+    then you used global, instead of 'ambient' still it thrown error.
+
+    REFER https://github.com/typings/typings/issues/517
+
+    typings install --save dt~es6-shim --global
+
+        --> this command worked        
+
+Now after installing this, event though the target is 'es5' the typescript compiler
+will not throw any error.
+
+Now import {Observable} from 'rxjs/Observable';
+
+import 'rxjs/add/observable/timer';
+
+IMPORTANT -> when ever you adding new content to '.ts' file DONOT FORGET TO compile it to 'js'
+    first run 'tsc' and then run 'http-server -c-1'
+
+Observable.timer(2000)
+    .subscribe((x) => console.log(x));
+        //this will throw error in the browser and says cant load
+
+this error is because typescript just converts the 'import' statements to 'require'
+and we need to make these libraries to laod using systemJs configuration.
+So configure systemJS in such a way that it loads 'rxjs'
+
+System.config({
+    packages: {
+        "dist": {
+            "defaultExtension": "js",
+            "main": "app"
+        },
+        "rxjs": {
+            "defaultExtension": "js"//what this does is, by default for require statements it will put '.js' at the end of the file name which is imported
+        }
+    },
+    map: {
+        "lodash" : "cdn of lodash",
+        "rxjs": "node_modules/rxjs"
+    }
+})                    
+--------------
+Adding decorators
+In order to add new properties to a class in es6, we have this feature called
+as 'experimentalDecorators' : true in tsconfig.json file in 'compilerOptions'.
+
+---
+> es5 way
+
+const person = {name: 'mad'};
+const student = {name: 'xyz'};
+
+function addAge(age){
+    return function(person){
+        return {
+            age,
+            name: person.name
+        }
+    }
+}
+
+addAge(40)(student);
+
+> es6 way
+        
+
+    function addAge(age){
+        return function(classHere){
+            return class{
+                name = new classHere().name;
+                age = age;
+            }
+        }
+    }
+-------    
+@addAge(40)
+class Person {
+        name = 'mad';
+} //this two must be together after @addAge() statement, immediately class must be defined
+else it will through an error saying 'declaration expected'
+
+console.log(new Person());//logs name and age, since we added decorator
+
+When ever an new instance of class is created, this 'age' with value 40 is also added to that 
+new instance class.
+----------
+Decorator Metadata
+
+> while using decorators, inside its implementation
+we can specify the metadata, which specifies the types of the class's constructor
+
+Initially to enable this, include this property called
+    'emitDecoratorMetadata': true inside 'compilerOptions' within tsconfig.json file
+
+    after this to look into the implementation, make some new changes inside of 'app.ts' file and compile
+    it to generate 'app.js' file and look into the decorator in es5 version within app.js,
+    you can see that a new statement is being added
+        _metadata('design:paramtypes', [String, Number])//here you will
+        have types of parameters you mentioned within the cosntructor of the 'classHere' in 
+        '.ts' file
+
+Now to include these implementation in your '.ts' file
+add this line
+    Reflect.getMetadata('design:paramtypes', classHere)
+        within the function that is returned within the decorator function.
+
+    now when you compile (i.e run tsc command) it will throw error, since you dint install
+    these libraries
+
+    npm install reflect-metadata crypto 
+        (donot use --save flag if you dont have package.json file, it will not install
+        if you use this flag)
+    here we are also installing crypto (this is a dependency to make reflect-metadata work
+    like jquery dependecny to make bootstrap work)
+
+    after this when you run 'tsc' and run the server, in chrome console it will throw error
+    because you dint configure the systemJs to load these libraries
+    for that
+        add
+            "reflect-metadata" : "node_modules/reflect-metadata/Reflect.js" //add this REflect.js file else if you just put the folder "node_modules/reflect-metadata" this will not work
+            "crypto" : "node_modules/crypto/sha1.js"
+
+Now make the required changes to app.ts file, to get the types in decorator's
+implementation.                       
+    Ex: 
+    function example(){
+        return function(classHere){
+            //..here we can mention the metadata, i.e types
+            const types = Reflect.getMetadata('design:paramtypes', classHere);//this has the types of arguments
+            //passed inside the constructor of 'classHere' in the form of an array
+            return classHere;
+        }
+    }
+
+    @example()
+    class Person{
+        constructor(name: string, id: number)
+    }
+
+ ------------
+ TYPESCRIPT DEFINITION FILES
+
+ REFER https://egghead.io/lessons/typescript-typescript-definition-files
+
+ Generally the type definition files are one that are used 
+ to know what methods to import from a library.
+ Ex: import {Observable} from 'rxjs/Observable';
+
+    here we know that we need to import 'Observable' so we sepcified explicitly 
+    it in the flower braces.
+    But some times we have no idea of what to import 
+    then here is the case we can look into the .d.ts file within 'rxjs' library
+    and look for methods what to import.
+
+    But for some of the libraries we dont have to import anything 
+    we juse need to import the library
+
+    Ex: import 'reflect-metada';
+    here this library has a definition file, but that file says that
+    'it doesnt require import and export statements it just referes to a polyfill'
+    So when ever this library is imported it points to the polyfill and we dont need 
+    to import any specific method from it. 
+
+These typings can also be used for libraries, to look into what kind of definition files that
+particular library has. Ex: if we want to look into typings offered by react
+    we can search for it by
+        typings search react
+            this will give the available type definition files that can be isntalled
+-------------
+Adding your own type definition files for the libraries that you created.
+
+When ever you wanted to have your definition files, include this proerty called
+    'declaration': true in 'compilerOptions' within tsconfig.json file
+
+    and run 'tsc', immediately you can see that corresponding '.d.ts' files of src folder are added in the 'dist' folder.
+
+    Here when these files are created, they have mutliple decalrations of the same classes
+    within 'src' folder as well, so when the user uses this library he might get errors with typescript
+    since it doesnt know which class definition files must be used. So to avoid that
+    exclude this 'dist' folder, write
+        'dist' within exclude property in tsconfig.json file
+
+    now to make the classes imported as specific methods from the library.
+    Ex: import {Person} from 'typescript-egg';
+    to make this statement work, we need to export that 'Person' method or export everything
+    that has these classes.
+    to do that, within src folder, create a file called
+    index.ts
+        within that
+            export * from './app';
+            export * from './network';
+            //write export fro all the '.ts' files you wrote
+            to make classes within them available as methods when imported from
+            the library ('typescript-egg').
+
+                then run tsc, this will create a 'index.d.ts' file within 'dist' folder.
+
+            Now when users install this library, by default to get this type definition file
+            'inde.d.ts' of dist folder, mention that in the package.json of your project('typescript-egg')
+            'typings': './dist/index.d.ts'--> this will tell the npm that
+            when ever this library is installed by the user, npm installs this file from 'dist' folder into the user's machine                
